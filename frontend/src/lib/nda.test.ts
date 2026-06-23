@@ -3,6 +3,7 @@ import {
   ATTRIBUTION,
   DOCUMENT_TITLE,
   STANDARD_TERMS,
+  coverPageFields,
   defaultFormData,
   emptyParty,
   formatDate,
@@ -226,6 +227,69 @@ describe("STANDARD_TERMS", () => {
       const text = segmentsToText(interpolate(term.body, complete));
       expect(text).not.toMatch(/\{\{|\[Purpose\]|\[Effective Date\]|\[Governing Law\]|\[Jurisdiction\]/);
     }
+  });
+});
+
+describe("coverPageFields", () => {
+  const find = (data: NdaFormData, key: string) =>
+    coverPageFields(data).find((f) => f.key === key);
+
+  const textOf = (data: NdaFormData, key: string) =>
+    segmentsToText(find(data, key)!.segments);
+
+  it("returns the six standard fields and omits modifications when empty", () => {
+    const fields = coverPageFields(makeData({ modifications: "" }));
+    expect(fields.map((f) => f.key)).toEqual([
+      "purpose",
+      "effectiveDate",
+      "mndaTerm",
+      "confidentialityTerm",
+      "governingLaw",
+    ]);
+  });
+
+  it("appends the modifications field only when present", () => {
+    const fields = coverPageFields(makeData({ modifications: "Section 5 amended." }));
+    const mods = fields.find((f) => f.key === "modifications");
+    expect(mods).toBeDefined();
+    expect(segmentsToText(mods!.segments)).toBe("Section 5 amended.");
+  });
+
+  it("marks unfilled values as muted placeholders", () => {
+    const [seg] = find(makeData({ purpose: "" }), "purpose")!.segments;
+    expect(seg).toEqual({ text: "[Purpose]", filled: false, placeholder: true });
+  });
+
+  it("marks filled values as emphasized (not placeholder)", () => {
+    const [seg] = find(makeData({ purpose: "Eval" }), "purpose")!.segments;
+    expect(seg).toEqual({ text: "Eval", filled: true });
+  });
+
+  it("renders the fixed MNDA term with a validated year count", () => {
+    expect(textOf(makeData({ mndaTermType: "fixed", mndaTermYears: "2" }), "mndaTerm")).toBe(
+      "Expires 2 year(s) from the Effective Date.",
+    );
+    // Invalid year falls back to the [#] placeholder.
+    expect(textOf(makeData({ mndaTermType: "fixed", mndaTermYears: "0" }), "mndaTerm")).toBe(
+      "Expires [#] from the Effective Date.",
+    );
+  });
+
+  it("renders the until-terminated and perpetuity branches", () => {
+    expect(textOf(makeData({ mndaTermType: "untilTerminated" }), "mndaTerm")).toBe(
+      "Continues until terminated in accordance with the MNDA.",
+    );
+    expect(
+      textOf(makeData({ confidentialityTermType: "perpetuity" }), "confidentialityTerm"),
+    ).toBe("In perpetuity.");
+  });
+
+  it("combines governing law and jurisdiction across two lines", () => {
+    const text = textOf(
+      makeData({ governingLaw: "Delaware", jurisdiction: "New Castle, DE" }),
+      "governingLaw",
+    );
+    expect(text).toBe("Governing Law: Delaware\nJurisdiction: New Castle, DE");
   });
 });
 

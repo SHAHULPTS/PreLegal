@@ -5,7 +5,7 @@ import {
   DOCUMENT_TITLE,
   SIGNATURE_ROWS,
   STANDARD_TERMS,
-  formatDate,
+  coverPageFields,
   interpolate,
   type DocSegment,
   type NdaFormData,
@@ -25,66 +25,13 @@ export default function NdaPreview({ data }: NdaPreviewProps) {
         <p className="text-xs uppercase tracking-wide text-slate-500">Cover Page</p>
       </header>
 
-      <CoverField label="Purpose" hint="How Confidential Information may be used">
-        <Value value={data.purpose} placeholder="[Purpose]" />
-      </CoverField>
-
-      <CoverField label="Effective Date">
-        <Value value={formatDate(data.effectiveDate)} placeholder="[Effective Date]" />
-      </CoverField>
-
-      <CoverField label="MNDA Term" hint="The length of this MNDA">
-        {data.mndaTermType === "fixed" ? (
-          <span>
-            Expires{" "}
-            <Value
-              value={data.mndaTermYears.trim()}
-              placeholder="[#]"
-              suffix=" year(s)"
-            />{" "}
-            from the Effective Date.
+      {coverPageFields(data).map((field) => (
+        <CoverField key={field.key} label={field.label} hint={field.hint}>
+          <span className="whitespace-pre-line">
+            <Segments segments={field.segments} />
           </span>
-        ) : (
-          <span>Continues until terminated in accordance with the MNDA.</span>
-        )}
-      </CoverField>
-
-      <CoverField
-        label="Term of Confidentiality"
-        hint="How long Confidential Information is protected"
-      >
-        {data.confidentialityTermType === "fixed" ? (
-          <span>
-            <Value
-              value={data.confidentialityTermYears.trim()}
-              placeholder="[#]"
-              suffix=" year(s)"
-            />{" "}
-            from the Effective Date, but trade secrets remain protected until they
-            are no longer trade secrets under applicable law.
-          </span>
-        ) : (
-          <span>In perpetuity.</span>
-        )}
-      </CoverField>
-
-      <CoverField label="Governing Law & Jurisdiction">
-        <div className="space-y-1">
-          <div>
-            Governing Law: <Value value={data.governingLaw} placeholder="[Fill in state]" />
-          </div>
-          <div>
-            Jurisdiction:{" "}
-            <Value value={data.jurisdiction} placeholder="[Fill in city/county and state]" />
-          </div>
-        </div>
-      </CoverField>
-
-      {data.modifications.trim() && (
-        <CoverField label="MNDA Modifications">
-          <span className="whitespace-pre-wrap">{data.modifications}</span>
         </CoverField>
-      )}
+      ))}
 
       <p className="pt-2">
         By signing this Cover Page, each party agrees to enter into this MNDA as of
@@ -117,36 +64,24 @@ export default function NdaPreview({ data }: NdaPreviewProps) {
 function Segments({ segments }: { segments: DocSegment[] }) {
   return (
     <>
-      {segments.map((seg, i) =>
-        seg.filled ? (
-          <strong key={i} className="font-semibold text-slate-900">
-            {seg.text}
-          </strong>
-        ) : (
-          <span key={i}>{seg.text}</span>
-        ),
-      )}
+      {segments.map((seg, i) => {
+        if (seg.filled) {
+          return (
+            <strong key={i} className="font-semibold text-slate-900">
+              {seg.text}
+            </strong>
+          );
+        }
+        if (seg.placeholder) {
+          return (
+            <span key={i} className="italic text-slate-400">
+              {seg.text}
+            </span>
+          );
+        }
+        return <span key={i}>{seg.text}</span>;
+      })}
     </>
-  );
-}
-
-function Value({
-  value,
-  placeholder,
-  suffix = "",
-}: {
-  value: string;
-  placeholder: string;
-  suffix?: string;
-}) {
-  if (!value.trim()) {
-    return <span className="italic text-slate-400">{placeholder}</span>;
-  }
-  return (
-    <strong className="font-semibold text-slate-900">
-      {value}
-      {suffix}
-    </strong>
   );
 }
 

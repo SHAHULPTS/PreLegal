@@ -68,6 +68,8 @@ export interface DocSegment {
   text: string;
   /** True for resolved Cover Page values (rendered emphasized). */
   filled: boolean;
+  /** True for an unfilled placeholder (rendered muted), e.g. "[Purpose]". */
+  placeholder?: boolean;
 }
 
 const FALLBACKS: Record<TokenKey, string> = {
@@ -153,6 +155,100 @@ export function interpolate(template: string, data: NdaFormData): DocSegment[] {
 /** Flattens segments into a plain string (used for the PDF file name, etc.). */
 export function segmentsToText(segments: DocSegment[]): string {
   return segments.map((s) => s.text).join("");
+}
+
+// ---------------------------------------------------------------------------
+// Cover Page fields (renderer-agnostic)
+// ---------------------------------------------------------------------------
+//
+// A single description of the Cover Page's fields, labels, and conditional
+// copy, expressed as DocSegments. Both the on-screen preview and the PDF map
+// over this so the business/legal wording lives in exactly one place.
+
+export interface CoverPageField {
+  key: string;
+  label: string;
+  hint?: string;
+  segments: DocSegment[];
+}
+
+const staticSeg = (text: string): DocSegment => ({ text, filled: false });
+
+function valueSeg(value: string, placeholder: string, suffix = ""): DocSegment {
+  const v = value.trim();
+  return v
+    ? { text: `${v}${suffix}`, filled: true }
+    : { text: placeholder, filled: false, placeholder: true };
+}
+
+function yearSeg(value: string): DocSegment {
+  const n = Number(value.trim());
+  return Number.isInteger(n) && n > 0
+    ? { text: `${n} year(s)`, filled: true }
+    : { text: "[#]", filled: false, placeholder: true };
+}
+
+export function coverPageFields(data: NdaFormData): CoverPageField[] {
+  const fields: CoverPageField[] = [
+    {
+      key: "purpose",
+      label: "Purpose",
+      hint: "How Confidential Information may be used",
+      segments: [valueSeg(data.purpose, "[Purpose]")],
+    },
+    {
+      key: "effectiveDate",
+      label: "Effective Date",
+      segments: [valueSeg(formatDate(data.effectiveDate), "[Effective Date]")],
+    },
+    {
+      key: "mndaTerm",
+      label: "MNDA Term",
+      hint: "The length of this MNDA",
+      segments:
+        data.mndaTermType === "fixed"
+          ? [
+              staticSeg("Expires "),
+              yearSeg(data.mndaTermYears),
+              staticSeg(" from the Effective Date."),
+            ]
+          : [staticSeg("Continues until terminated in accordance with the MNDA.")],
+    },
+    {
+      key: "confidentialityTerm",
+      label: "Term of Confidentiality",
+      hint: "How long Confidential Information is protected",
+      segments:
+        data.confidentialityTermType === "fixed"
+          ? [
+              yearSeg(data.confidentialityTermYears),
+              staticSeg(
+                " from the Effective Date, but trade secrets remain protected until they are no longer trade secrets under applicable law.",
+              ),
+            ]
+          : [staticSeg("In perpetuity.")],
+    },
+    {
+      key: "governingLaw",
+      label: "Governing Law & Jurisdiction",
+      segments: [
+        staticSeg("Governing Law: "),
+        valueSeg(data.governingLaw, "[Fill in state]"),
+        staticSeg("\nJurisdiction: "),
+        valueSeg(data.jurisdiction, "[Fill in city/county and state]"),
+      ],
+    },
+  ];
+
+  if (data.modifications.trim()) {
+    fields.push({
+      key: "modifications",
+      label: "MNDA Modifications",
+      segments: [staticSeg(data.modifications)],
+    });
+  }
+
+  return fields;
 }
 
 // ---------------------------------------------------------------------------

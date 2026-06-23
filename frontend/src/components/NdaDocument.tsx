@@ -12,8 +12,9 @@ import {
   DOCUMENT_TITLE,
   SIGNATURE_ROWS,
   STANDARD_TERMS,
-  formatDate,
+  coverPageFields,
   interpolate,
+  type DocSegment,
   type NdaFormData,
   type Party,
 } from "@/lib/nda";
@@ -75,21 +76,22 @@ const styles = StyleSheet.create({
   headerCell: { backgroundColor: "#f8fafc", fontFamily: "Helvetica-Bold" },
 });
 
-function ValueText({
-  value,
-  placeholder,
-  suffix = "",
-}: {
-  value: string;
-  placeholder: string;
-  suffix?: string;
-}) {
-  if (!value.trim()) return <Text style={styles.placeholder}>{placeholder}</Text>;
+function segmentStyle(seg: DocSegment) {
+  if (seg.filled) return styles.bold;
+  if (seg.placeholder) return styles.placeholder;
+  return undefined;
+}
+
+/** Renders DocSegments as inline (nestable) Text runs. */
+function Segments({ segments }: { segments: DocSegment[] }) {
   return (
-    <Text style={styles.bold}>
-      {value}
-      {suffix}
-    </Text>
+    <>
+      {segments.map((seg, i) => (
+        <Text key={i} style={segmentStyle(seg)}>
+          {seg.text}
+        </Text>
+      ))}
+    </>
   );
 }
 
@@ -137,60 +139,11 @@ export default function NdaDocument({ data }: { data: NdaFormData }) {
         <Text style={styles.title}>{DOCUMENT_TITLE}</Text>
         <Text style={styles.subtitle}>Cover Page</Text>
 
-        <CoverField label="Purpose" hint="How Confidential Information may be used">
-          <ValueText value={data.purpose} placeholder="[Purpose]" />
-        </CoverField>
-
-        <CoverField label="Effective Date">
-          <ValueText value={formatDate(data.effectiveDate)} placeholder="[Effective Date]" />
-        </CoverField>
-
-        <CoverField label="MNDA Term" hint="The length of this MNDA">
-          {data.mndaTermType === "fixed" ? (
-            <>
-              <Text>Expires </Text>
-              <ValueText value={data.mndaTermYears.trim()} placeholder="[#]" suffix=" year(s)" />
-              <Text> from the Effective Date.</Text>
-            </>
-          ) : (
-            <Text>Continues until terminated in accordance with the MNDA.</Text>
-          )}
-        </CoverField>
-
-        <CoverField
-          label="Term of Confidentiality"
-          hint="How long Confidential Information is protected"
-        >
-          {data.confidentialityTermType === "fixed" ? (
-            <>
-              <ValueText
-                value={data.confidentialityTermYears.trim()}
-                placeholder="[#]"
-                suffix=" year(s)"
-              />
-              <Text>
-                {" "}
-                from the Effective Date, but trade secrets remain protected until they
-                are no longer trade secrets under applicable law.
-              </Text>
-            </>
-          ) : (
-            <Text>In perpetuity.</Text>
-          )}
-        </CoverField>
-
-        <CoverField label="Governing Law & Jurisdiction">
-          <Text>Governing Law: </Text>
-          <ValueText value={data.governingLaw} placeholder="[Fill in state]" />
-          <Text>{"\n"}Jurisdiction: </Text>
-          <ValueText value={data.jurisdiction} placeholder="[Fill in city/county and state]" />
-        </CoverField>
-
-        {data.modifications.trim() ? (
-          <CoverField label="MNDA Modifications">
-            <Text>{data.modifications}</Text>
+        {coverPageFields(data).map((field) => (
+          <CoverField key={field.key} label={field.label} hint={field.hint}>
+            <Segments segments={field.segments} />
           </CoverField>
-        ) : null}
+        ))}
 
         <Text style={styles.intro}>
           By signing this Cover Page, each party agrees to enter into this MNDA as of
@@ -205,11 +158,7 @@ export default function NdaDocument({ data }: { data: NdaFormData }) {
             <Text style={styles.bold}>
               {term.number}. {term.title}.{" "}
             </Text>
-            {interpolate(term.body, data).map((seg, i) => (
-              <Text key={i} style={seg.filled ? styles.bold : undefined}>
-                {seg.text}
-              </Text>
-            ))}
+            <Segments segments={interpolate(term.body, data)} />
           </Text>
         ))}
 
