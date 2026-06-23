@@ -91,9 +91,11 @@ export function formatDate(iso: string): string {
 }
 
 function years(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "[#]";
-  return trimmed === "1" ? "1 year" : `${trimmed} years`;
+  const n = Number(value.trim());
+  // Reject blank, non-numeric, non-integer, and non-positive year counts so
+  // legally nonsensical text (e.g. "0 years", "-3 years") never reaches output.
+  if (!Number.isInteger(n) || n <= 0) return "[#]";
+  return n === 1 ? "1 year" : `${n} years`;
 }
 
 /** Computes the resolved (possibly empty) value for each Cover Page token. */
@@ -120,16 +122,16 @@ function tokenValues(data: NdaFormData): Record<TokenKey, string> {
   };
 }
 
-const TOKEN_RE = /\{\{(\w+)\}\}/g;
-
 /** Splits a template string into static and resolved-value segments. */
 export function interpolate(template: string, data: NdaFormData): DocSegment[] {
   const values = tokenValues(data);
   const segments: DocSegment[] = [];
+  // Local to each call: avoids shared `lastIndex` state on a module-level regex.
+  const tokenRe = /\{\{(\w+)\}\}/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = TOKEN_RE.exec(template)) !== null) {
+  while ((match = tokenRe.exec(template)) !== null) {
     if (match.index > lastIndex) {
       segments.push({ text: template.slice(lastIndex, match.index), filled: false });
     }
@@ -221,6 +223,16 @@ export const STANDARD_TERMS: StandardTerm[] = [
     title: "General",
     body: "Neither party has an obligation under this MNDA to disclose Confidential Information to the other or proceed with any proposed transaction. Neither party may assign this MNDA without the prior written consent of the other party, except that either party may assign this MNDA in connection with a merger, reorganization, acquisition or other transfer of all or substantially all its assets or voting securities. Any assignment in violation of this Section is null and void. This MNDA will bind and inure to the benefit of each party’s permitted successors and assigns. Waivers must be signed by the waiving party’s authorized representative and cannot be implied from conduct. If any provision of this MNDA is held unenforceable, it will be limited to the minimum extent necessary so the rest of this MNDA remains in effect. This MNDA (including the Cover Page) constitutes the entire agreement of the parties with respect to its subject matter, and supersedes all prior and contemporaneous understandings, agreements, representations, and warranties, whether written or oral, regarding such subject matter. This MNDA may only be amended, modified, waived, or supplemented by an agreement in writing signed by both parties. Notices, requests and approvals under this MNDA must be sent in writing to the email or postal addresses on the Cover Page and are deemed delivered on receipt. This MNDA may be executed in counterparts, including electronic copies, each of which is deemed an original and which together form the same agreement.",
   },
+];
+
+/** Rows of the Cover Page signature block, shared by the preview and the PDF. */
+export const SIGNATURE_ROWS: { label: string; get: (party: Party) => string }[] = [
+  { label: "Signature", get: () => "" },
+  { label: "Print Name", get: (p) => p.signatoryName },
+  { label: "Title", get: (p) => p.title },
+  { label: "Company", get: (p) => p.companyName },
+  { label: "Notice Address", get: (p) => p.noticeAddress },
+  { label: "Date", get: () => "" },
 ];
 
 export const ATTRIBUTION =

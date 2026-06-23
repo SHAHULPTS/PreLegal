@@ -142,11 +142,13 @@ export default function NdaForm({ data, onChange }: NdaFormProps) {
 
       <PartyFields
         title="Party 1"
+        partyKey="party1"
         party={data.party1}
         onChange={(patch) => setParty("party1", patch)}
       />
       <PartyFields
         title="Party 2"
+        partyKey="party2"
         party={data.party2}
         onChange={(patch) => setParty("party2", patch)}
       />
@@ -156,35 +158,37 @@ export default function NdaForm({ data, onChange }: NdaFormProps) {
 
 function PartyFields({
   title,
+  partyKey,
   party,
   onChange,
 }: {
   title: string;
+  partyKey: "party1" | "party2";
   party: Party;
   onChange: (patch: Partial<Party>) => void;
 }) {
   return (
     <Section title={title} description="Signing party details for the Cover Page.">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Company" htmlFor={`${title}-company`}>
+        <Field label="Company" htmlFor={`${partyKey}-company`}>
           <input
-            id={`${title}-company`}
+            id={`${partyKey}-company`}
             className={inputClass}
             value={party.companyName}
             onChange={(e) => onChange({ companyName: e.target.value })}
           />
         </Field>
-        <Field label="Print name" htmlFor={`${title}-name`}>
+        <Field label="Print name" htmlFor={`${partyKey}-name`}>
           <input
-            id={`${title}-name`}
+            id={`${partyKey}-name`}
             className={inputClass}
             value={party.signatoryName}
             onChange={(e) => onChange({ signatoryName: e.target.value })}
           />
         </Field>
-        <Field label="Title" htmlFor={`${title}-title`}>
+        <Field label="Title" htmlFor={`${partyKey}-title`}>
           <input
-            id={`${title}-title`}
+            id={`${partyKey}-title`}
             className={inputClass}
             value={party.title}
             onChange={(e) => onChange({ title: e.target.value })}
@@ -192,10 +196,10 @@ function PartyFields({
         </Field>
         <Field
           label="Notice address (email or postal)"
-          htmlFor={`${title}-address`}
+          htmlFor={`${partyKey}-address`}
         >
           <input
-            id={`${title}-address`}
+            id={`${partyKey}-address`}
             className={inputClass}
             value={party.noticeAddress}
             onChange={(e) => onChange({ noticeAddress: e.target.value })}

@@ -3,6 +3,7 @@
 import {
   ATTRIBUTION,
   DOCUMENT_TITLE,
+  SIGNATURE_ROWS,
   STANDARD_TERMS,
   formatDate,
   interpolate,
@@ -168,15 +169,6 @@ function CoverField({
 }
 
 function SignatureTable({ party1, party2 }: { party1: Party; party2: Party }) {
-  const rows: { label: string; get: (p: Party) => string }[] = [
-    { label: "Signature", get: () => "" },
-    { label: "Print Name", get: (p) => p.signatoryName },
-    { label: "Title", get: (p) => p.title },
-    { label: "Company", get: (p) => p.companyName },
-    { label: "Notice Address", get: (p) => p.noticeAddress },
-    { label: "Date", get: () => "" },
-  ];
-
   return (
     <table className="w-full border-collapse text-[12px]">
       <thead>
@@ -187,7 +179,7 @@ function SignatureTable({ party1, party2 }: { party1: Party; party2: Party }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => (
+        {SIGNATURE_ROWS.map((row) => (
           <tr key={row.label}>
             <th className="border border-slate-300 bg-slate-50 p-2 text-left font-medium">
               {row.label}
