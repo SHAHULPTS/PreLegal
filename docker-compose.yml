@@ -1,0 +1,31 @@
+# PreLegal V1 foundation — two services on a shared network.
+# The SQLite database lives inside the backend container with no volume mount,
+# so it is recreated from scratch on every `up` (temporary by design).
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Falls back to a dev default if the value is not set in the root .env.
+      SESSION_SECRET: ${SESSION_SECRET:-dev-insecure-session-secret-change-me}
+      DATABASE_PATH: /tmp/prelegal.db
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    healthcheck:
+      test:
+        ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # Base URL the browser uses to reach the API (for future wiring).
+      NEXT_PUBLIC_API_URL: http://localhost:8000
