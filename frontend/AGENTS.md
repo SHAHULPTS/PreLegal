@@ -10,7 +10,8 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports all 11 document types via AI chat with full user authentication and document persistence.
+This describes the target product. For what is actually built today, see
+**Implementation status** at the end of this file.
 
 ## Development process
 
@@ -28,11 +29,13 @@ There is an OPENROUTER_API_KEY in the .env file in the project root.
 
 ## Technical design
 
-The entire project should be packaged into a Docker container.  
-The backend should be in backend/ and be a uv project, using FastAPI.  
-The frontend should be in frontend/  
-The database should use SQLLite and be created from scratch each time the Docker container is brought up, allowing for a users table with sign up and sign in.  
-Consider statically building the frontend and serving it via FastAPI, if that will work.  
+The project is orchestrated with Docker Compose. The backend is in backend/ and
+is a uv project using FastAPI. The frontend is in frontend/.  
+The database uses SQLite and is created from scratch each time the stack is
+brought up, allowing for a users table with sign up and sign in.  
+Decision (PL-4): the frontend and backend run as **two separate services** — the
+frontend is its own container (Next.js `output: "standalone"` build) rather than
+being served statically by FastAPI.  
 There should be scripts in scripts/ for:  
 ```bash
 # Mac
@@ -58,4 +61,40 @@ Backend available at http://localhost:8000
 
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
+## Implementation status
+
+_Last updated: 2026-06-28 (PL-6)._
+
+**Built so far:**
+- **Multi-document AI generator (PL-5, PL-6)** — a generic, template-driven
+  generator. The user chats with an AI that first works out which document they
+  need (and, for an unsupported request, declines and suggests the closest
+  supported one), then collects that document's key terms. A live preview + a
+  client-side PDF (`@react-pdf/renderer`) are rendered from the markdown template
+  (cover page of key terms + standard terms); any field can be fine-tuned by hand.
+  - Backend document registry (`backend/app/documents.py`): hand-authored field
+    specs + markdown templates, with per-document Structured-Outputs schemas built
+    dynamically. Supported today: **Mutual NDA, Data Processing Agreement, Pilot
+    Agreement, Cloud Service Agreement** (adding more = one `DocumentSpec`).
+  - API: `GET /api/documents`, `GET /api/documents/{id}` (spec + template), and
+    the two-phase `POST /api/chat` (LiteLLM → OpenRouter `gpt-oss-120b` via
+    Cerebras, Structured Outputs). Chat is auth-gated.
+  - Frontend (`frontend/`): generic `Document*` components + `lib/documents.ts`
+    (cover-page/signature rendering) and `lib/template.ts` (Common Paper markdown
+    parser). Replaces the bespoke NDA-only path.
+  - **Auth UI (PL-5)** — `AuthForm` / `AuthGate` consume the auth endpoints and
+    gate the generator.
+- **Backend foundation (`backend/`)** — uv + FastAPI on `:8000`. Temporary SQLite
+  recreated from scratch on every startup. `users` table with
+  `POST /api/auth/signup`, `/signin`, `/logout`, `GET /api/auth/me`
+  (PBKDF2-hashed passwords, `itsdangerous`-signed session cookie), plus
+  `GET /api/health`. pytest suite covers health, auth, documents + chat.
+- **Orchestration** — `docker-compose.yml` runs backend + frontend as two
+  services; the backend image is built from the repo root so it includes
+  `catalog.json` + `templates/` (read by the document registry at runtime).
+  `scripts/start-*` / `stop-*` wrap `docker compose up --build` / `down`.
+
+**Not built yet (future tickets):** field specs for the remaining ~8 templates,
+persistence of generated documents (PL-7).
 <!-- END:nextjs-agent-rules -->

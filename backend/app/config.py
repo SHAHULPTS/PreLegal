@@ -10,7 +10,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Read the repo-root .env (one level up) when running locally from backend/,
+    # and a local .env if present. Docker passes these as real env vars.
+    model_config = SettingsConfigDict(env_file=("../.env", ".env"), extra="ignore")
 
     # Signs the session cookie. A development default is provided so the app
     # runs out of the box; production deployments must set SESSION_SECRET.
@@ -28,6 +30,10 @@ class Settings(BaseSettings):
 
     # Session lifetime in seconds (used to expire the signed cookie).
     session_max_age: int = 60 * 60 * 24 * 7  # 7 days
+
+    # OpenRouter API key for the AI chat. LiteLLM reads OPENROUTER_API_KEY from
+    # the environment; this also surfaces it for a clear "not configured" error.
+    openrouter_api_key: str = ""
 
 
 settings = Settings()
