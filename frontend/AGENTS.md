@@ -64,23 +64,37 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Implementation status
 
-_Last updated: 2026-06-24 (PL-4)._
+_Last updated: 2026-06-28 (PL-6)._
 
 **Built so far:**
-- **Frontend (`frontend/`)** — Next.js 16 Mutual NDA generator (PL-3): form →
-  live preview → client-side PDF via `@react-pdf/renderer`. Containerized with a
-  multi-stage `output: "standalone"` build; runs on `:3000`.
-- **Backend (`backend/`)** — uv + FastAPI on `:8000` (PL-4 foundation). Temporary
-  SQLite recreated from scratch on every startup. `users` table with
-  `POST /api/auth/signup`, `/signin`, `/logout` and `GET /api/auth/me`
+- **Multi-document AI generator (PL-5, PL-6)** — a generic, template-driven
+  generator. The user chats with an AI that first works out which document they
+  need (and, for an unsupported request, declines and suggests the closest
+  supported one), then collects that document's key terms. A live preview + a
+  client-side PDF (`@react-pdf/renderer`) are rendered from the markdown template
+  (cover page of key terms + standard terms); any field can be fine-tuned by hand.
+  - Backend document registry (`backend/app/documents.py`): hand-authored field
+    specs + markdown templates, with per-document Structured-Outputs schemas built
+    dynamically. Supported today: **Mutual NDA, Data Processing Agreement, Pilot
+    Agreement, Cloud Service Agreement** (adding more = one `DocumentSpec`).
+  - API: `GET /api/documents`, `GET /api/documents/{id}` (spec + template), and
+    the two-phase `POST /api/chat` (LiteLLM → OpenRouter `gpt-oss-120b` via
+    Cerebras, Structured Outputs). Chat is auth-gated.
+  - Frontend (`frontend/`): generic `Document*` components + `lib/documents.ts`
+    (cover-page/signature rendering) and `lib/template.ts` (Common Paper markdown
+    parser). Replaces the bespoke NDA-only path.
+  - **Auth UI (PL-5)** — `AuthForm` / `AuthGate` consume the auth endpoints and
+    gate the generator.
+- **Backend foundation (`backend/`)** — uv + FastAPI on `:8000`. Temporary SQLite
+  recreated from scratch on every startup. `users` table with
+  `POST /api/auth/signup`, `/signin`, `/logout`, `GET /api/auth/me`
   (PBKDF2-hashed passwords, `itsdangerous`-signed session cookie), plus
-  `GET /api/health`. pytest suite covers health + auth.
+  `GET /api/health`. pytest suite covers health, auth, documents + chat.
 - **Orchestration** — `docker-compose.yml` runs backend + frontend as two
-  services; `scripts/start-*` / `stop-*` wrap `docker compose up --build` / `down`.
-- **Data** — `catalog.json` and `templates/` exist (PL-2) but are not yet wired
-  into the app.
+  services; the backend image is built from the repo root so it includes
+  `catalog.json` + `templates/` (read by the document registry at runtime).
+  `scripts/start-*` / `stop-*` wrap `docker compose up --build` / `down`.
 
-**Not built yet (future tickets):** AI chat, document generation for the full
-catalog, persistence of generated documents, and any frontend auth UI (the auth
-endpoints exist but no UI consumes them yet).
+**Not built yet (future tickets):** field specs for the remaining ~8 templates,
+persistence of generated documents (PL-7).
 <!-- END:nextjs-agent-rules -->

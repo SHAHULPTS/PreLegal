@@ -3,7 +3,11 @@
 # so it is recreated from scratch on every `up` (temporary by design).
 services:
   backend:
-    build: ./backend
+    # Build from the repo root so the image can include catalog.json + templates/
+    # (the document registry reads them at runtime).
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
