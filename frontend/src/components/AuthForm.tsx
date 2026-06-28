@@ -41,13 +41,19 @@ export default function AuthForm({ onAuthed }: AuthFormProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-16">
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+      <div className="mb-6 flex items-center gap-2">
+        <span className="text-xl font-bold tracking-tight text-brand-navy">PreLegal</span>
+        <span className="rounded bg-brand-yellow px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-navy">
+          Beta
+        </span>
+      </div>
+      <h1 className="text-2xl font-bold tracking-tight text-brand-navy">
         {isSignup ? "Create your account" : "Sign in"}
       </h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <p className="mt-2 text-sm text-brand-gray">
         {isSignup
-          ? "Sign up to start drafting your Mutual NDA with AI."
-          : "Sign in to draft your Mutual NDA with AI."}
+          ? "Sign up to draft legal documents with AI."
+          : "Sign in to draft legal documents with AI."}
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -93,17 +99,17 @@ export default function AuthForm({ onAuthed }: AuthFormProps) {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+          className="w-full rounded-md bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
         >
           {submitting ? "Please wait…" : isSignup ? "Sign up" : "Sign in"}
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-600">
+      <p className="mt-4 text-sm text-brand-gray">
         {isSignup ? "Already have an account?" : "Need an account?"}{" "}
         <button
           type="button"
-          className="font-semibold text-slate-900 underline underline-offset-2"
+          className="font-semibold text-brand-purple underline underline-offset-2"
           onClick={() => {
             setMode(isSignup ? "signin" : "signup");
             setError(null);

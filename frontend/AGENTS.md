@@ -64,9 +64,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Implementation status
 
-_Last updated: 2026-06-28 (PL-6)._
+_Last updated: 2026-06-28 (PL-7)._
 
 **Built so far:**
+- **Multi-user accounts + saved documents (PL-7)** — signed-in users can **Save**
+  the document they're working on (type + captured field values) and re-open or
+  delete past work from a "Your documents" history list; re-saving updates the
+  same record. Backend: `saved_documents` table + `GET/POST/PUT/DELETE
+  /api/saved-documents` scoped to the current user (temporary DB, wiped on
+  restart). The UI is restyled with the PreLegal brand palette (navy/purple/
+  yellow/blue), and a legal-evaluation **disclaimer** appears both in the app and
+  embedded in every generated PDF.
 - **Multi-document AI generator (PL-5, PL-6)** — a generic, template-driven
   generator. The user chats with an AI that first works out which document they
   need (and, for an unsupported request, declines and suggests the closest
