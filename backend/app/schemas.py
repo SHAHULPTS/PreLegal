@@ -53,3 +53,34 @@ class ChatResult(BaseModel):
     documentType: str = ""
     fields: dict[str, str] = Field(default_factory=dict)
     complete: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Saved documents
+# ---------------------------------------------------------------------------
+
+
+class SavedDocumentWrite(BaseModel):
+    """Payload to create or update a saved document."""
+
+    documentType: str
+    title: str = Field(min_length=1, max_length=200)
+    fields: dict[str, str] = Field(default_factory=dict)
+
+
+class SavedDocumentSummary(BaseModel):
+    """List view: enough to show and re-open an entry."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    documentType: str = Field(validation_alias="document_type")
+    title: str
+    updated_at: datetime
+
+
+class SavedDocumentPublic(SavedDocumentSummary):
+    """Full saved document, including its captured fields."""
+
+    fields: dict[str, str]
+    created_at: datetime

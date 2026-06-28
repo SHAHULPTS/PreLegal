@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mutual NDA Generator | PreLegal",
+  title: "PreLegal — AI Legal Document Generator",
   description:
-    "Create a complete Mutual Non-Disclosure Agreement from a simple form and download it as a PDF.",
+    "Draft legal agreements by chatting with an AI. Choose a document, fill in the details, save your work, and download a finished PDF.",
 };
 
 export default function RootLayout({

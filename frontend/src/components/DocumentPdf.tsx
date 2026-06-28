@@ -3,6 +3,7 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import {
   coverRows,
+  DISCLAIMER,
   partyGroups,
   type DocumentDetail,
   type FieldValues,
@@ -44,6 +45,15 @@ const styles = StyleSheet.create({
   defined: { fontFamily: "Helvetica-Bold" },
   placeholder: { fontFamily: "Helvetica-Oblique", color: "#9ca3af" },
   intro: { marginTop: 12, marginBottom: 8 },
+  disclaimer: {
+    marginTop: 4,
+    marginBottom: 12,
+    padding: 6,
+    fontSize: 8,
+    color: "#032147",
+    backgroundColor: "#fbf3d6",
+    border: "1pt solid #ecad0a",
+  },
   attribution: { fontSize: 8, color: "#6b7280", marginTop: 16 },
   table: { marginTop: 10, borderTop: "1pt solid #cbd5e1", borderLeft: "1pt solid #cbd5e1" },
   row: { flexDirection: "row" },
@@ -109,6 +119,8 @@ export default function DocumentPdf({ doc, values }: { doc: DocumentDetail; valu
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{doc.name}</Text>
         <Text style={styles.subtitle}>Cover Page</Text>
+
+        <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
 
         {rows.map((row) => (
           <View key={row.key} style={styles.coverField}>
